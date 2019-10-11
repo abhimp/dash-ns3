@@ -20,7 +20,8 @@
 
 namespace ns3 {
 
-std::string const dashLogDirectory = "dash-log-files/";
+std::string  dashLogDirectory();
+void dashLogDirectory(std::string logDir);
 
 /*! \class algorithmReply tcp-stream-interface.h "model/tcp-stream-interface.h"
  *  \ingroup tcpStream

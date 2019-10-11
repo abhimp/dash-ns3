@@ -180,6 +180,11 @@ TcpStreamClient::GetTypeId (void)
                    AddressValue (),
                    MakeAddressAccessor (&TcpStreamClient::m_peerAddress),
                    MakeAddressChecker ())
+    .AddAttribute ("fifoPath",
+                   "The destination Address of the outbound packets",
+                   StringValue (),
+                   MakeStringAccessor (&TcpStreamClient::m_fifoPath),
+                   MakeStringChecker ())
     .AddAttribute ("RemotePort",
                    "The destination port of the outbound packets",
                    UintegerValue (0),
@@ -194,6 +199,11 @@ TcpStreamClient::GetTypeId (void)
                    "The relative path (from ns-3.x directory) to the file containing the segment sizes in bytes",
                    StringValue ("bitrates.txt"),
                    MakeStringAccessor (&TcpStreamClient::m_segmentSizeFilePath),
+                   MakeStringChecker ())
+    .AddAttribute ("VideoFilePath",
+                   "The relative path (from ns-3.x directory) to the file containing the segment sizes in bytes",
+                   StringValue (""),
+                   MakeStringAccessor (&TcpStreamClient::m_videoFilePath),
                    MakeStringChecker ())
     .AddAttribute ("SimulationId",
                    "The ID of the current simulation, for logging purposes",
@@ -210,6 +220,11 @@ TcpStreamClient::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&TcpStreamClient::m_clientId),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("AbrPort",
+                   "The port where abr engin is running only for remote",
+                   IntegerValue (8001),
+                   MakeIntegerAccessor (&TcpStreamClient::m_abrPort),
+                   MakeIntegerChecker<int> ())
   ;
   return tid;
 }
@@ -230,6 +245,7 @@ TcpStreamClient::TcpStreamClient ()
   m_bufferUnderrun = false;
   m_currentPlaybackIndex = 0;
 
+
 }
 
 void
@@ -238,6 +254,8 @@ TcpStreamClient::Initialise (std::string algorithm, uint16_t clientId)
   NS_LOG_FUNCTION (this);
   m_videoData.segmentDuration = m_segmentDuration;
   if (ReadInBitrateValues (ToString (m_segmentSizeFilePath)) == -1)
+  	if (ReadInVideoInfo (ToString (m_videoFilePath)) == -1)
+
     {
       NS_LOG_ERROR ("Opening test bitrate file failed. Terminating.\n");
       Simulator::Stop ();
@@ -257,6 +275,10 @@ TcpStreamClient::Initialise (std::string algorithm, uint16_t clientId)
     {
       algo = new FestiveAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput);
     }
+  else if (algorithm == "remote")
+  {
+      algo = new RemoteAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput, m_simulationId, m_fifoPath, m_abrPort);
+  }
   else
     {
       NS_LOG_ERROR ("Invalid algorithm name entered. Terminating.");
@@ -357,6 +379,53 @@ TcpStreamClient::ReadInBitrateValues (std::string segmentSizeFile)
       m_videoData.segmentSize.push_back (line);
       averageByteSizeTemp = (int64_t) std::accumulate ( line.begin (), line.end (), 0.0) / line.size ();
       m_videoData.averageBitrate.push_back ((8.0 * averageByteSizeTemp) / (m_videoData.segmentDuration / 1000000.0));
+    }
+  NS_ASSERT_MSG (!m_videoData.segmentSize.empty (), "No segment sizes read from file.");
+  return 1;
+}
+
+int
+TcpStreamClient::ReadInVideoInfo (std::string segmentSizeFile)
+{
+  NS_LOG_FUNCTION (this);
+  std::ifstream myfile;
+  myfile.open (segmentSizeFile.c_str ());
+  if (!myfile)
+    {
+      return -1;
+    }
+  std::string temp;
+  //read segmentDuration
+  std::getline (myfile, temp);
+  if (temp.empty ())
+	{
+	  return -1;
+	}
+  std::istringstream buffer (temp);
+  std::vector<int64_t> line ((std::istream_iterator<int64_t> (buffer)),
+							 std::istream_iterator<int64_t>());
+  m_videoData.segmentDuration = line.front();
+  //read bitrates
+  std::getline (myfile, temp);
+  if (temp.empty ())
+	{
+	  return -1;
+	}
+  buffer = std::istringstream(temp);
+  std::vector<double> linef ((std::istream_iterator<double> (buffer)),
+							 std::istream_iterator<double>());
+  m_videoData.averageBitrate = linef;
+  //read bitrates
+  while (std::getline (myfile, temp))
+    {
+      if (temp.empty ())
+        {
+          break;
+        }
+      std::istringstream buffer (temp);
+      std::vector<int64_t> line ((std::istream_iterator<int64_t> (buffer)),
+                                 std::istream_iterator<int64_t>());
+      m_videoData.segmentSize.push_back (line);
     }
   NS_ASSERT_MSG (!m_videoData.segmentSize.empty (), "No segment sizes read from file.");
   return 1;
@@ -602,32 +671,32 @@ TcpStreamClient::InitializeLogFiles (std::string simulationId, std::string clien
 {
   NS_LOG_FUNCTION (this);
 
-  std::string dLog = dashLogDirectory + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "_" + "cl" + clientId + "_"  + "downloadLog.txt";
+  std::string dLog = dashLogDirectory() + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "/" + "cl" + clientId + "_"  + "downloadLog.txt";
   downloadLog.open (dLog.c_str ());
   downloadLog << "Segment_Index Download_Request_Sent Download_Start Download_End Segment_Size Download_OK\n";
   downloadLog.flush ();
 
-  std::string pLog = dashLogDirectory + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "_" + "cl" + clientId + "_"  + "playbackLog.txt";
+  std::string pLog = dashLogDirectory() + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "/" + "cl" + clientId + "_"  + "playbackLog.txt";
   playbackLog.open (pLog.c_str ());
   playbackLog << "Segment_Index Playback_Start Quality_Level\n";
   playbackLog.flush ();
 
-  std::string aLog = dashLogDirectory + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "_" + "cl" + clientId + "_"  + "adaptationLog.txt";
+  std::string aLog = dashLogDirectory() + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "/" + "cl" + clientId + "_"  + "adaptationLog.txt";
   adaptationLog.open (aLog.c_str ());
   adaptationLog << "Segment_Index Rep_Level Decision_Point_Of_Time Case DelayCase\n";
   adaptationLog.flush ();
 
-  std::string bLog = dashLogDirectory + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "_" + "cl" + clientId + "_"  + "bufferLog.txt";
+  std::string bLog = dashLogDirectory() + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "/" + "cl" + clientId + "_"  + "bufferLog.txt";
   bufferLog.open (bLog.c_str ());
   bufferLog << "     Time_Now  Buffer_Level \n";
   bufferLog.flush ();
 
-  std::string tLog = dashLogDirectory + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "_" + "cl" + clientId + "_"  + "throughputLog.txt";
+  std::string tLog = dashLogDirectory() + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "/" + "cl" + clientId + "_"  + "throughputLog.txt";
   throughputLog.open (tLog.c_str ());
   throughputLog << "     Time_Now Bytes Received \n";
   throughputLog.flush ();
 
-  std::string buLog = dashLogDirectory + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "_" + "cl" + clientId + "_"  + "bufferUnderrunLog.txt";
+  std::string buLog = dashLogDirectory() + m_algoName + "/" +  numberOfClients  + "/sim" + simulationId + "/" + "cl" + clientId + "_"  + "bufferUnderrunLog.txt";
   bufferUnderrunLog.open (buLog.c_str ());
   bufferUnderrunLog << ("Buffer_Underrun_Started_At         Until \n");
   bufferUnderrunLog.flush ();

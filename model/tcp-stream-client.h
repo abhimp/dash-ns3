@@ -31,6 +31,7 @@
 #include "tobasco2.h"
 #include "festive.h"
 #include "panda.h"
+#include "remote.h"
 
 
 namespace ns3 {
@@ -176,6 +177,7 @@ private:
    * as a 2x2 matrix, with spaces separating the segment sizes and newlines for every representation level.
    */
   int ReadInBitrateValues (std::string segmentSizeFile);
+  int ReadInVideoInfo (std::string segmentSizeFile);
   /*
    * \brief Controls / simulates playback process
    *
@@ -262,6 +264,7 @@ private:
   uint16_t m_simulationId; //!< The Id of this simulation, for logging purposes
   uint16_t m_numberOfClients; //!< The total number of clients for this simulation, for logging purposes
   std::string m_segmentSizeFilePath; //!< The relative path (from ns-3.x directory) to the file containing the segment sizes in bytes
+  std::string m_videoFilePath; //!< The relative path (from ns-3.x directory) to the file containing the segment sizes in bytes
   std::string m_algoName;//!< Name of the apation algorithm's class which this client will use for the simulation
   bool m_bufferUnderrun; //!< True if there is currently a buffer underrun in the simulated playback
   int64_t m_currentPlaybackIndex; //!< The index of the segment that is currently being played
@@ -289,7 +292,9 @@ private:
   bufferData m_bufferData; //!< Keep track of the buffer level
   playbackData m_playbackData; //!< Tracking the simulated playback of segments
   videoData m_videoData; //!< Information about segment sizes, average bitrates of representation levels and segment duration in microseconds
+  std::string m_fifoPath;
 
+  int m_abrPort;
 };
 
 } // namespace ns3

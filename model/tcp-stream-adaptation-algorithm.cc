@@ -34,4 +34,20 @@ AdaptationAlgorithm::AdaptationAlgorithm (  const videoData & videoData,
 {
 }
 
+
+std::string dashLogDirectoryGlo = "dash-log-files/";
+
+std::string dashLogDirectory(){
+	return dashLogDirectoryGlo;
+}
+
+void dashLogDirectory(std::string logDir){
+
+	if(logDir.back() != '/'){
+		logDir.push_back('/');
+	}
+
+	dashLogDirectoryGlo = logDir;
+}
+
 } // namespace ns3

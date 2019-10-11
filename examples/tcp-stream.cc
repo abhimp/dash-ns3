@@ -224,15 +224,18 @@ main (int argc, char *argv[])
   randPosAlloc->AssignStreams (simulationId);
 
   // create folder so we can log the positions of the clients
-  const char * mylogsDir = dashLogDirectory.c_str();
+  std::string tmpdashLogDirectory = dashLogDirectory();
+  const char * mylogsDir = tmpdashLogDirectory.c_str();
   mkdir (mylogsDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-  const char * tobascoDir = (dashLogDirectory + adaptationAlgo).c_str ();
+  tmpdashLogDirectory += "/" + adaptationAlgo;
+  const char * tobascoDir = tmpdashLogDirectory.c_str ();
   mkdir (tobascoDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-  const char * dir = (dashLogDirectory + adaptationAlgo + "/" + ToString (numberOfClients) + "/").c_str();
+  tmpdashLogDirectory += "/" + ToString (numberOfClients);
+  const char * dir = tmpdashLogDirectory.c_str();
   mkdir(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
   std::ofstream clientPosLog;
-  std::string clientPos = dashLogDirectory + "/" + adaptationAlgo + "/" + ToString (numberOfClients) + "/" + "sim" + ToString (simulationId) + "_"  + "clientPos.txt";
+  std::string clientPos = tmpdashLogDirectory + "/" + "sim" + ToString (simulationId) + "_"  + "clientPos.txt";
   clientPosLog.open (clientPos.c_str());
   NS_ASSERT_MSG (clientPosLog.is_open(), "Couldn't open clientPosLog file");
 

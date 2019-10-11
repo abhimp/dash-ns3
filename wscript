@@ -9,6 +9,7 @@ def build(bld):
         'model/tcp-stream-adaptation-algorithm.cc',
         'model/festive.cc',
         'model/panda.cc',
+        'model/remote.cc',
         'model/tobasco2.cc',
         'helper/tcp-stream-helper.cc',
         ]
@@ -22,6 +23,7 @@ def build(bld):
         'model/tcp-stream-adaptation-algorithm.h',
         'model/festive.h',
         'model/panda.h',
+        'model/remote.h',
         'model/tobasco2.h',
         'helper/tcp-stream-helper.h',
         ]
