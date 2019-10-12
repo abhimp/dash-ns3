@@ -10,6 +10,7 @@ def build(bld):
         'model/festive.cc',
         'model/panda.cc',
         'model/remote.cc',
+        'model/remoteprefetch.cc',
         'model/tobasco2.cc',
         'helper/tcp-stream-helper.cc',
         ]
@@ -24,6 +25,7 @@ def build(bld):
         'model/festive.h',
         'model/panda.h',
         'model/remote.h',
+        'model/remoteprefetch.h',
         'model/tobasco2.h',
         'helper/tcp-stream-helper.h',
         ]

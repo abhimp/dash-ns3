@@ -32,6 +32,7 @@
 #include "festive.h"
 #include "panda.h"
 #include "remote.h"
+#include "remoteprefetch.h"
 
 
 namespace ns3 {

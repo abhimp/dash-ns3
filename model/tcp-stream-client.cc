@@ -279,6 +279,10 @@ TcpStreamClient::Initialise (std::string algorithm, uint16_t clientId)
   {
       algo = new RemoteAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput, m_simulationId, m_fifoPath, m_abrPort);
   }
+  else if (algorithm == "remoteprefetch")
+  {
+      algo = new RemoteAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput, m_simulationId, m_fifoPath, m_abrPort);
+  }
   else
     {
       NS_LOG_ERROR ("Invalid algorithm name entered. Terminating.");
